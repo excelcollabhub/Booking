@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Booking Platform</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f0f2f5;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+    }
+
+    .booking-form {
+        max-width: 400px;
+        width: 100%;
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        box-sizing: border-box;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 5px;
+        color: #555;
+    }
+
+    input[type="text"],
+    input[type="tel"],
+    input[type="email"],
+    input[type="date"],
+    select,
+    button {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 15px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        box-sizing: border-box;
+        font-size: 16px;
+        color: #333;
+    }
+
+    input[type="text"]:focus,
+    input[type="tel"]:focus,
+    input[type="email"]:focus,
+    input[type="date"]:focus,
+    select:focus,
+    button:focus {
+        border-color: #007bff;
+        outline: none;
+    }
+
+    button {
+        background-color: #007bff;
+        color: #fff;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+        background-color: #0056b3;
+    }
+
+    .booking-details {
+        margin-top: 20px;
+        background-color: #e9ecef;
+        padding: 10px;
+        border-radius: 5px;
+    }
+
+    .booking-details h2 {
+        margin: 0 0 10px 0;
+        font-size: 18px;
+        color: #333;
+    }
+
+    .booking-details p {
+        margin: 5px 0;
+        font-size: 16px;
+        color: #555;
+    }
+</style>
+</head>
+<body>
+<div class="booking-form">
+    <h1>Book a Site Visit</h1>
+    <form id="bookingForm">
+        <label for="name">Name:</label>
+        <input type="text" id="name" required>
+        
+        <label for="mobile">Mobile No:</label>
+        <input type="tel" id="mobile" required>
+        
+        <label for="flat">Flat No:</label>
+        <input type="text" id="flat" required>
+        
+        <label for="email">Email:</label>
+        <input type="email" id="email" required>
+        
+        <label for="date">Select Date:</label>
+        <input type="date" id="date" min="2024-06-15" max="2024-06-30" required onchange="updateAvailableSlots()">
+        
+        <label for="time">Select Time Slot:</label>
+        <select id="time" required>
+            <option disabled selected>Select a time slot</option>
+        </select>
+        
+        <button type="button" onclick="bookSlot()">Book Now</button>
+    </form>
+    <div id="availability"></div>
+    <div id="client-info"></div>
+</div>
+
+<script>
+    const maxSlotsPerTime = 2;
+    const timeSlots = [
+        "10:30-11:30",
+        "11:30-12:30",
+        "12:30-13:30",
+        "15:00-16:00",
+        "16:00-17:00"
+    ];
+
+    function bookSlot() {
+        const name = document.getElementById('name').value;
+        const mobile = document.getElementById('mobile').value;
+        const flat = document.getElementById('flat').value;
+        const email = document.getElementById('email').value;
+        const date = document.getElementById('date').value;
+        const time = document.getElementById('time').value;
+
+        if (!name || !mobile || !flat || !email || !date || !time) {
+            alert('Please fill in all fields.');
+            return;
+        }
+
+        const availability = localStorage.getItem(date) ? JSON.parse(localStorage.getItem(date)) : {};
+        if ((availability[time] || 0) < maxSlotsPerTime) {
+            availability[time] = (availability[time] || 0) + 1;
+            localStorage.setItem(date, JSON.stringify(availability));
+
+            const bookingDetails = {
+                name,
+                mobile,
+                flat,
+                email,
+                date,
+                time
+            };
+
+            localStorage.setItem(`${date}-${time}`, JSON.stringify(bookingDetails));
+
+            updateAvailableSlots();
+
+            const clientInfoDiv = document.getElementById('client-info');
+            clientInfoDiv.innerHTML = `
+                <div class="booking-details">
+                    <h2>Booking Details</h2>
+                    <p><strong>Name:</strong> ${name}</p>
+                    <p><strong>Mobile No:</strong> ${mobile}</p>
+                    <p><strong>Flat No:</strong> ${flat}</p>
+                    <p><strong>Email:</strong> ${email}</p>
+                    <p><strong>Date:</strong> ${date}</p>
+                    <p><strong>Time Slot:</strong> ${time}</p>
+                </div>
+            `;
+
+            alert('Booking successful!');
+        } else {
+            alert('This time slot is fully booked. Please select a different time slot.');
+        }
+    }
+
+    function updateAvailableSlots() {
+        const date = document.getElementById('date').value;
+        const availability = localStorage.getItem(date) ? JSON.parse(localStorage.getItem(date)) : {};
+        const timeSelect = document.getElementById('time');
+
+        timeSelect.innerHTML = '<option disabled selected>Select a time slot</option>';
+
+        timeSlots.forEach(slot => {
+            const booked = availability[slot] || 0;
+            const availableSlots = maxSlotsPerTime - booked;
+            const option = document.createElement('option');
+            option.value = slot;
+            option.textContent = `${slot} (${availableSlots} available)`;
+            option.disabled = availableSlots === 0;
+            timeSelect.appendChild(option);
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        updateAvailableSlots();
+    });
+</script>
+</body>
+</html>
